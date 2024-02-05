@@ -1,137 +1,93 @@
 const persons = [];
-const persDate = [];
 
-const addPerson = document.getElementById('addPerson');
-const calcStats = document.getElementById('calcStats');
 
-const inpId = document.getElementById('personId');
-const inpName = document.getElementById('firstName');
-const inpLastName = document.getElementById('lastName');
-const inpDate = document.getElementById('birthDate');
-
-const personsList = document.getElementById('personsList');
 
 addPerson.onclick = function () {
-    if (findPerson(persons, inpId.value) === -1 || inpId.value === '') {
-        const newPers = new Person(+inpId.value, inpName.value, inpLastName.value, inpDate.value);
-        persons.push(newPers);
+    const person = new Person(personId.value.trim(), firstName.value.trim(), lastName.value.trim(), birthDate.value);
+    if (persons.findIndex(({ id }) => id === person.id) >= 0) {
+        alert(`Person with id = ${person.id} exists`);
+    } else {
+        clearStats();
+        persons.push(person);
+        
+        const li = createInfoElement(person.toString(), 'li');
+
+
+        let button = document.createElement("input");
+        button.setAttribute("type", "button");
+        //button.setAttribute("class", `delete`);
+        button.setAttribute("class", `delete_${person.id}`);
+        button.setAttribute("value", "X");
+        button.setAttribute("onclick", "dell");
+
+
+        personsList.append(li);
+        li.append(button);
+        document.querySelector(`.delete_${person.id}`).onclick = dell;
     }
-
-    printPersons();
-
-    console.log(persons)
-
-    inpId.value = '';
-    inpName.value = '';
-    inpLastName.value = '';
-    inpDate.value = '';
-
-}
+    personId.value = firstName.value = lastName.value = birthDate.value = '';
+};
 
 calcStats.onclick = function () {
-    calcAge(persons);
-    //console.log(persDate);
-
-    const max = persDate.reduce((maxValue, currentValue, currentIndex) => {
-        if (currentValue > maxValue.value) {
-            maxValue.value = currentValue;
-            maxValue.index = currentIndex;
-        }
-        return maxValue;
-    }, { value: -Infinity, index: -1 });
-
-    const min = persDate.reduce((accum, b) => b < accum ? b : accum);
-    function minInd(persDate) {
-        const minIndex = persDate.reduce((res, currentAge, currentIndex, array) => {
-            if (currentAge < array[res]) {
-                return currentIndex;
-            }
-            return res;
-        }, 0);
-        console.log(minIndex);
-        return minIndex;
+    clearStats();
+    const divStats = document.createElement('div');
+    try {
+        let age = persons.reduce((accum, p) => accum + p.getAge(), 0) / persons.length;
+        const h3avg = createInfoElement(`Average age: ${age.toFixed(1)}`, 'h3');
+        age = persons.reduce((min, p) => p.getAge() < min ? p.getAge() : min, persons[0].getAge());
+        const h3min = createInfoElement(`Min age: ${age}`, 'h3');
+        age = persons.reduce((max, p) => p.getAge() > max ? p.getAge() : max, persons[0].getAge());
+        const h3max = createInfoElement(`Max age: ${age}`, 'h3');
+        divStats.append(h3avg, h3min, h3max);
+    } catch (e) {
+        const h3Error = createInfoElement('No data for processing', 'h3');
+        divStats.append(h3Error);
     }
-
-    const allAge = persDate.reduce((accum, b) => b + accum);
-
-    console.log(`Максимальное значение: ${max.value}`);
-    console.log(`Индекс максимального значения: ${max.index}`);
-    console.log(`Максимальное значение: ${min}`);
-    console.log(`Индекс максимального значения: ${minInd(persDate)}`);
-    console.log(`Средний возраст: ${allAge / persDate.length}`);
-
-    printStatistick = function () {
-        while (stats.firstChild) {
-            stats.removeChild(stats.firstChild);
-        }
-
-        const li1 = document.createElement('li');
-        li1.append(document.createTextNode(`Max age => ${persons[max.index]} => ${max.value} years`));
-        stats.append(li1);
-
-        const li2 = document.createElement('li');
-        li2.append(document.createTextNode(`Min age =>  ${persons[minInd(persDate)]} => ${min} years`));
-        stats.append(li2);
-
-        const li3 = document.createElement('li');
-        li3.append(document.createTextNode(`Midl age  => ${allAge / persDate.length} years`));
-        stats.append(li3);
-    }
-
-    printStatistick();
-}
-
-
-printPersons = function () {
-    while (personsList.firstChild) {
-        personsList.removeChild(personsList.firstChild);
-    }
-
-    for (let i = 0; i < persons.length; i++) {
-        const li = document.createElement('li');
-        li.append(document.createTextNode(persons[i].toString()));
-        personsList.append(li);
-    }
-}
-
-function findPerson(persons, id) {
-    for (let i = 0; i < persons.length; i++) {
-        if (persons[i].id === id) {
-            return i;
-        }
-    }
-    return -1;
-}
-
-function calcAge(persons) {
-    console.log(persons);
-    let currentDate = new Date();
-    let currentYear = currentDate.getFullYear();
-    let currentMonth = currentDate.getMonth() + 1;
-    let currentDay = currentDate.getDate();
-
-    for (let i = 0; i < persons.length; i++) {
-        let parts = persons[i].brithDate.split("-");
-        let inputYear = parseInt(parts[0]);
-        let inputMonth = parseInt(parts[1]);
-        let inputDay = parseInt(parts[2]);
-        let age = currentYear - inputYear;
-        if (currentMonth < inputMonth || (currentMonth === inputMonth && currentDay < inputDay)) {
-            age--; // Уменьшите возраст, если текущая дата меньше введенной даты
-        }
-        persDate[i] = age;
-    }
-    return persDate;
-    //console.log(persDate);
-}
-
-
-function Person(id, name, lastName, brithDate, age) {
-    this.id = id;
-    this.name = name;
-    this.lastName = lastName;
-    this.brithDate = brithDate;
-    this.toString = function () {
-        return `ID: ${this.id}, first name: ${this.name}, Last name: ${this.lastName}, Date brithday: ${this.brithDate}`;
-    }
+    stats.appendChild(divStats);
 };
+
+function clearStats() {
+    if (stats.firstElementChild.nextElementSibling) {
+        stats.firstElementChild.nextElementSibling.remove();
+    }
+}
+
+function Person(id, firstName, lastName, date) {
+    this.id = +id;
+    this.firstName = firstName;
+    this.lastName = lastName;
+    this.birthDate = new Date(date);
+    this.getAge = function () {
+        const ageDiffMs = (new Date()) - this.birthDate;
+        const ageDate = new Date(ageDiffMs);
+        return (ageDate.getUTCFullYear() - 1970);
+    };
+    this.toString = function () {
+        return `ID: ${this.id}, ${this.firstName}, ${this.lastName}, age: ${this.getAge()}`;
+    }
+}
+
+function createInfoElement(content, tag) {
+    const element = document.createElement(tag);
+    const text = document.createTextNode(content);
+    element.appendChild(text);
+    return element;
+}
+
+function dell() {
+    const stepID1 = this.parentNode.innerHTML.split(':')
+    const stepID2 = stepID1[1].split(',')
+    let currentId = Number(stepID2[0]);
+    //console.log(currentId);
+
+    this.parentNode.remove();
+    persons.forEach((element, index) => {
+        if(element.id === currentId) {
+            persons.splice(index, 1)
+            return persons;
+        }
+    });
+    //console.log(persons);
+    clearStats();
+    return persons;
+}
